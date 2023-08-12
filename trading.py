@@ -13,7 +13,68 @@ client = MongoClient()
 collection = client.OHLC.test
 doc_len = collection.count_documents({})
 
-class Strategist:
+class Actions:
+
+    def get_data(self, collection):
+        #data from mongoDB to pandas
+        pandas_data = pd.DataFrame(list(collection.find()))
+        #get latest entry
+        latest_entry = collection.find_one(sort=[("_id", pymongo.DESCENDING)])
+        return pandas_data, latest_entry
+
+    def get_date_price(self, bar):
+        date = str(self.data.index[bar])[:10]
+        price = self.data.Close.iloc[bar]
+        return date, price
+
+    def place_sell_order(self, bar, units = None, amount=None):
+        date, price = self.get_date_price(bar)
+        if units is None:
+            units = int(amount/price)
+        self.amount += (units * price) * (1-self.ptc) - self.ftc
+        
+        self.units -= units
+        self.trades += 1
+        if self.verbose:
+            print(f"{date} | selling {units} units at {price:.2f}")
+            self.print_balance(bar)
+            self.print_net_wealth(bar)
+
+    def place_buy_order(self, bar, units=None, amount=None):
+        date, price = self.get_date_price(bar)
+        
+        if units is None:
+            units = int(amount/price)
+        self.amount -= (units * price) * (1+self.ptc) + self.ftc
+        
+        self.units += units
+        self.trades += 1
+        if self.verbose:
+            print(f"{date} | selling {units} units at {price:.2f}")
+            
+            self.print_balance(bar)
+            self.print_net_wealth(bar)
+
+
+    def set_stop_loss():
+        print("stop_loss")
+
+    def close_out(self, bar):
+        date, price = self.get_date_price(bar)
+        self.amount += self.units * price
+        self.units = 0
+        self.trades += 1
+        if self.verbose:
+            print(f"{date} | inventory {self.units} units at {price:.2f}")
+            print("=" * 55)
+        
+        print(f"Final balance  [$ ]{self.amount:.2f}")
+        perf = ((self.amount - self.initial_amount)/self.initial_amount * 100)
+        print(f"Net performance [%] {perf:.2f}")
+        print(f"Trades executed [#] {self.trades:.2f}")
+        print("=" * 55)
+
+class Strategist(Actions):
     def __init__(self,data, active_strat="SMA_strategy"):
         self.active_strat = active_strat
         self.data = data
@@ -51,20 +112,10 @@ class Strategist:
         elif self.active_strat == "Momentum_strategy":
             self.Momentum_strategy(3)
 
-def get_data(collection):
-    #data from mongoDB to pandas
-    pandas_data = pd.DataFrame(list(collection.find()))
-    #get latest entry
-    latest_entry = collection.find_one(sort=[("_id", pymongo.DESCENDING)])
-    return pandas_data, latest_entry
-
-
-
-
-
+agent = Actions()
 while True:
     if collection.count_documents({}) > doc_len:
-        new_data, latest_price = get_data(collection)
+        new_data, latest_price = agent.get_data(collection)
         strategist = Strategist(new_data)
         strategist.Momentum_strategy(3)
         doc_len+=1
