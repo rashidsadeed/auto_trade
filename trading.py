@@ -1,19 +1,26 @@
 from ast import Num
 from datetime import date
+import imp
 from operator import ne
 from pydoc import doc
 import re
+import symbol
 from pymongo import MongoClient
 import pymongo
 import pandas as pd
 import datetime
 import numpy as np
+from binance.client import Client
+from binance.enums import *
 
+b_client = Client("api key", "private key")
 client = MongoClient()
 collection = client.OHLC.test
 doc_len = collection.count_documents({})
 
 class Actions:
+    def __init__(self, client):
+        self.client = client
 
     def get_data(self, collection):
         #data from mongoDB to pandas
@@ -31,8 +38,15 @@ class Actions:
         date, price = self.get_date_price(bar)
         if units is None:
             units = int(amount/price)
-        self.amount += (units * price) * (1-self.ptc) - self.ftc
         
+        """binance API sell order"""
+        order = client.create_order(symbol="BTCUSDT", side="SELL", type="MARKET", quantity=units)
+        #self.amount += (units * price) * (1-self.ptc) - self.ftc
+        print(order)
+
+        
+        # refine this part to work in real-time
+        """have to get this information live from binance"""
         self.units -= units
         self.trades += 1
         if self.verbose:
@@ -45,8 +59,15 @@ class Actions:
         
         if units is None:
             units = int(amount/price)
-        self.amount -= (units * price) * (1+self.ptc) + self.ftc
-        
+
+        """binance API BUY  order"""
+        order = client.create_order(symbol="BTCUSDT", side="SELL", type="MARKET", quantity=units)
+        #self.amount -= (units * price) * (1+self.ptc) + self.ftc
+        print(order)
+
+
+        #refine this part to work in real-time
+        """have to get this information live from binance"""
         self.units += units
         self.trades += 1
         if self.verbose:
@@ -112,7 +133,12 @@ class Strategist(Actions):
         elif self.active_strat == "Momentum_strategy":
             self.Momentum_strategy(3)
 
-agent = Actions()
+
+
+
+agent = Actions(b_client)
+
+
 while True:
     if collection.count_documents({}) > doc_len:
         new_data, latest_price = agent.get_data(collection)
