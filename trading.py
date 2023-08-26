@@ -40,13 +40,17 @@ class Actions:
             units = int(amount/price)
         
         """binance API sell order"""
-        order = client.create_order(symbol="BTCUSDT", side="SELL", type="MARKET", quantity=units)
+        order = client.create_order(symbol=bar, side="SELL", type="MARKET", quantity=units)
+        """to be sure of the syntax first without staking any money 
+        be sure to use create_test_order function first"""
+        
         #self.amount += (units * price) * (1-self.ptc) - self.ftc
         print(order)
 
         
         # refine this part to work in real-time
-        """have to get this information live from binance"""
+        """get this information live from binance"""
+        #####client.get_asset_balance(asset=bar)
         self.units -= units
         self.trades += 1
         if self.verbose:
@@ -61,13 +65,14 @@ class Actions:
             units = int(amount/price)
 
         """binance API BUY  order"""
-        order = client.create_order(symbol="BTCUSDT", side="SELL", type="MARKET", quantity=units)
+        order = client.create_order(symbol=bar, side="SELL", type="MARKET", quantity=units)
         #self.amount -= (units * price) * (1+self.ptc) + self.ftc
         print(order)
 
 
         #refine this part to work in real-time
         """have to get this information live from binance"""
+        #####client.get_asset_balance(asset=bar)
         self.units += units
         self.trades += 1
         if self.verbose:
@@ -76,10 +81,25 @@ class Actions:
             self.print_balance(bar)
             self.print_net_wealth(bar)
 
+    def set_stop_loss(self, bar, Sprice, SLprice):
+        try:
+            
+            order = client.create_oco_order(
+                symbol=bar,
+                side='SELL',
+                quantity=100,
+                price=250,
+                stopPrice=Sprice,
+                stopLimitPrice=SLprice,
+                stopLimitTimeInForce='GTC')
 
-    def set_stop_loss():
-        print("stop_loss")
+            print(order)
 
+        except BinanceAPIException as e:
+            # error handling goes here
+            print(e)
+
+    ###check this code again to make sense of it and implement it in binance API terms
     def close_out(self, bar):
         date, price = self.get_date_price(bar)
         self.amount += self.units * price
@@ -105,6 +125,46 @@ class Strategist(Actions):
 
     def EMA_strategy(self):
         return "something"
+
+    """https://www.brokerxplorer.com/article/the-ultimate-3-ema-crossover-strategy-revealed-1856"""
+    ###this staretegy is highly sketchy
+    def triple_EMA_crossover(self, EMA1=10, EMA2=30, EMA3=50):
+        #first you should create the EMAs in this part
+        #
+        #
+        #
+
+        if self.data["close"] > EMA1 and self.data["close"] > EMA2 and self.data["close"] > EMA3:
+            #take action
+            print("uptrend and rising momentum")
+        elif self.data["close"] < EMA1 and self.data["close"] < EMA2 and self.data["close"] < EMA3:
+            #take action
+            print("downtrend and falling momentum")
+        elif EMA3 > EMA2 and EMA3 > EMA1:
+            #take action
+            print("market has lost short-term momentum")
+        elif self.data["close"] < EMA3:
+            #take action
+            print("reversal from long-term uptrend into a downtrend")
+    
+        if EMA2 > EMA3 and EMA1 > EMA2:
+            #take action
+            print("Long position")
+        
+        if EMA2 < EMA3 and EMA1 < EMA2:
+            #take action
+            print("Short position")
+
+        if EMA2 < EMA3 and EMA1 > EMA2:
+            #take action
+            print("longer-term downtrend is potentially reversing into a longer-term uptrend")
+
+        if EMA2 > EMA3 and EMA1 < EMA2:
+            #take action
+            print("longer-term uptrend is reversing into a longer-term downtrend")
+
+
+
 
     def Momentum_strategy(self, momentum):
         global doc_len
