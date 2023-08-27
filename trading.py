@@ -1,13 +1,9 @@
-from ast import Num
 from datetime import date
-import imp
-from operator import ne
-from pydoc import doc
-import re
-import symbol
 from pymongo import MongoClient
 import pymongo
 import pandas as pd
+import pandas_ta as pt
+import talib as tb
 import datetime
 import numpy as np
 from binance.client import Client
@@ -116,9 +112,10 @@ class Actions:
         print("=" * 55)
 
 class Strategist(Actions):
-    def __init__(self,data, active_strat="SMA_strategy"):
+    def __init__(self,data, agent, active_strat="SMA_strategy"):
         self.active_strat = active_strat
         self.data = data
+        self.agent = agent
 
     def SMA_strategy(self, SMA1, SMA2):
         return "somwthing"
@@ -127,7 +124,7 @@ class Strategist(Actions):
         return "something"
 
     """https://www.brokerxplorer.com/article/the-ultimate-3-ema-crossover-strategy-revealed-1856"""
-    ###this staretegy is highly sketchy
+    ###this staretegy is highly sketchycreate
     def triple_EMA_crossover(self, EMA1=10, EMA2=30, EMA3=50):
         #first you should create the EMAs in this part
         #
@@ -163,7 +160,18 @@ class Strategist(Actions):
             #take action
             print("longer-term uptrend is reversing into a longer-term downtrend")
 
-
+    "needs refining"
+    def MACD_stochastic_strategy(self,bar, stoch_fast, stock_slow, macd_fast, macd_slow, macd_signal):
+        self.data[["STOCHk", "STOCHd"]] = pt.stoch(self.data["high"], self.data["low"], self.data["close"],k=stoch_fast, d=stock_slow, talib=True)
+        self.data[["MACD", 'MACDh', "MACDs"]] = pt.macd(self.data["close"], fast=macd_fast, slow=macd_slow, signal=macd_signal)
+        if self.data["MACD"] > self.data["MACDh"]:
+            if self.data["STOCHk"] < 20:
+                """this should be goes below 20 and immediatly comes above"""
+                self.agent.place_buy_order(bar):
+        elif self.data["MACD"] < self.data["MACDh"]:
+            if self.data["STOCHk"] > 80:
+                """this should be goes above 80 and then comes below after immediately"""
+                self.agent.place_sell_order(bar)
 
 
     def Momentum_strategy(self, momentum):
@@ -202,7 +210,7 @@ agent = Actions(b_client)
 while True:
     if collection.count_documents({}) > doc_len:
         new_data, latest_price = agent.get_data(collection)
-        strategist = Strategist(new_data)
+        strategist = Strategist(new_data, agent)
         strategist.Momentum_strategy(3)
         doc_len+=1
     
