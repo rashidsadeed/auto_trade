@@ -170,13 +170,20 @@ class Strategist(Actions):
         self.data[["STOCHk", "STOCHd"]] = pt.stoch(self.high, self.low, self.close ,k=stoch_fast, d=stock_slow, talib=True)
         self.data[["MACD", 'MACDh', "MACDs"]] = pt.macd(self.close, fast=macd_fast, slow=macd_slow, signal=macd_signal)
         if self.data["MACD"] > self.data["MACDh"]:
+            """this should be goes below 20 and immediatly comes above"""
             if self.data["STOCHk"] < 20:
-                """this should be goes below 20 and immediatly comes above"""
-                return "buy", bar
+                stage_1 = True
+                while stage_1:
+                    if self.data["STOCHk"] > 20:
+                        stage_1 = False
+                        return "buy", bar
         elif self.data["MACD"] < self.data["MACDh"]:
+            """this should be goes above 80 and then comes below after immediately"""
             if self.data["STOCHk"] > 80:
-                """this should be goes above 80 and then comes below after immediately"""
-                return "sell", bar
+                stage_1 = True
+                while stage_1:
+                    if self.data["STOCHk"] < 80:
+                        return "sell", bar
 
 
     def Momentum_strategy(self, bar, momentum):
