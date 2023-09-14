@@ -115,7 +115,12 @@ class Strategist(Actions):
     def __init__(self,data, agent, active_strat="SMA_strategy"):
         self.active_strat = active_strat
         self.data = data
+        self.open = data["open"]
+        self.high = data["high"]
+        self.low = data["low"]
+        self.close = data["close"]
         self.agent = agent
+
 
     def SMA_strategy(self, SMA1, SMA2):
         return "somwthing"
@@ -162,24 +167,24 @@ class Strategist(Actions):
 
     "needs refining"
     def MACD_stochastic_strategy(self,bar, stoch_fast, stock_slow, macd_fast, macd_slow, macd_signal):
-        self.data[["STOCHk", "STOCHd"]] = pt.stoch(self.data["high"], self.data["low"], self.data["close"],k=stoch_fast, d=stock_slow, talib=True)
-        self.data[["MACD", 'MACDh', "MACDs"]] = pt.macd(self.data["close"], fast=macd_fast, slow=macd_slow, signal=macd_signal)
+        self.data[["STOCHk", "STOCHd"]] = pt.stoch(self.high, self.low, self.close ,k=stoch_fast, d=stock_slow, talib=True)
+        self.data[["MACD", 'MACDh', "MACDs"]] = pt.macd(self.close, fast=macd_fast, slow=macd_slow, signal=macd_signal)
         if self.data["MACD"] > self.data["MACDh"]:
             if self.data["STOCHk"] < 20:
                 """this should be goes below 20 and immediatly comes above"""
-                self.agent.place_buy_order(bar):
+                return "buy", bar
         elif self.data["MACD"] < self.data["MACDh"]:
             if self.data["STOCHk"] > 80:
                 """this should be goes above 80 and then comes below after immediately"""
-                self.agent.place_sell_order(bar)
+                return "sell", bar
 
 
-    def Momentum_strategy(self, momentum):
+    def Momentum_strategy(self, bar, momentum):
         global doc_len
         min_len = momentum + 1
         if collection.count_documents({}) > doc_len:
-            self.data["returns"] = np.log(self.data["close"]/self.data["close"].shift(1))
-            if len(self.data["close"]) > min_len:
+            self.data["returns"] = np.log(self.close/self.close.shift(1))
+            if len(self.close) > min_len:
                 self.data["momentum"] = np.sign(self.data["returns"].rolling(momentum).mean())
                 print("\n" + "=" * 51)
                 print(f"NEW SIGNAL | {datetime.datetime.now()}")
@@ -187,11 +192,11 @@ class Strategist(Actions):
                 print(self.data.iloc[:-1].tail())
                 if self.data["momentum"].iloc[-2] == -1.0:
                     print("long position.")
-                    print("WE SUPPOSEDLY bought here")
+                    return "buy", bar
                 
                 elif self.data["momentum"].iloc[-2] == -1.0:
                     print("short position here")
-                    print("WE SUPPOESDLY sold here")
+                    return "sell", bar
             
     def run(self):
         if self.active_strat == "SMA_strategy":
@@ -200,7 +205,6 @@ class Strategist(Actions):
             self.EMA_strategy()
         elif self.active_strat == "Momentum_strategy":
             self.Momentum_strategy(3)
-
 
 
 
