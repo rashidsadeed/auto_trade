@@ -122,13 +122,44 @@ class Strategist(Actions):
         self.agent = agent
 
 
-    def SMA_strategy(self, SMA1, SMA2):
-        return "somwthing"
+    def SMA_strategy(self, bar, SMA1, SMA2):
+        self.data[f"SMA_{SMA1}"] = pt.sma(self.close, length=SMA1)
+        self.data[f"SMA_{SMA2}"] = pt.sma(self.close, length=SMA2)
+        if self.data[f"SMA_{SMA1}"] > self.data[f"SMA_{SMA2}"]:
+            return "buy", bar
+        elif self.data[f"SMA_{SMA1}"] < self.data[f"SMA_{SMA2}"]:
+            return "sell", bar
+    
+    def EMA_strategy(self, bar, EMA1, EMA2):
+        self.data[f"EMA_{EMA1}"] = pt.sma(self.close, length=EMA1)
+        self.data[f"EMA_{EMA2}"] = pt.sma(self.close, length=EMA2)  
+        if self.data[f"EMA_{EMA1}"] > self.data[f"EMA_{EMA2}"]:
+            return "buy", bar
+        elif self.data[f"EMA_{EMA1}"] < self.data[f"EMA_{EMA2}"]:
+            return "sell", bar
+ 
+    "needs refining"
+    def MACD_stochastic_strategy(self,bar, stoch_fast, stock_slow, macd_fast, macd_slow, macd_signal):  
+        self.data[["STOCHk", "STOCHd"]] = pt.stoch(self.high, self.low, self.close ,k=stoch_fast, d=stock_slow, talib=True)
+        self.data[["MACD", 'MACDh', "MACDs"]] = pt.macd(self.close, fast=macd_fast, slow=macd_slow, signal=macd_signal)
+        if self.data["MACD"] > self.data["MACDh"]:
+            """this should be goes below 20 and immediatly comes above"""
+            if self.data["STOCHk"] < 20:
+                stage_1 = True
+                while stage_1:
+                    if self.data["STOCHk"] > 20:
+                        stage_1 = False
+                        return "buy", bar
+        elif self.data["MACD"] < self.data["MACDh"]:
+            """this should be goes above 80 and then comes below after immediately"""
+            if self.data["STOCHk"] > 80:
+                stage_1 = True
+                while stage_1:
+                    if self.data["STOCHk"] < 80:
+                        return "sell", bar
 
-    def EMA_strategy(self):
-        return "something"
 
-    """https://www.brokerxplorer.com/article/the-ultimate-3-ema-crossover-strategy-revealed-1856"""
+   """https://www.brokerxplorer.com/article/the-ultimate-3-ema-crossover-strategy-revealed-1856"""
     ###this staretegy is highly sketchycreate
     def triple_EMA_crossover(self, EMA1=10, EMA2=30, EMA3=50):
         #first you should create the EMAs in this part
@@ -164,26 +195,6 @@ class Strategist(Actions):
         if EMA2 > EMA3 and EMA1 < EMA2:
             #take action
             print("longer-term uptrend is reversing into a longer-term downtrend")
-
-    "needs refining"
-    def MACD_stochastic_strategy(self,bar, stoch_fast, stock_slow, macd_fast, macd_slow, macd_signal):
-        self.data[["STOCHk", "STOCHd"]] = pt.stoch(self.high, self.low, self.close ,k=stoch_fast, d=stock_slow, talib=True)
-        self.data[["MACD", 'MACDh', "MACDs"]] = pt.macd(self.close, fast=macd_fast, slow=macd_slow, signal=macd_signal)
-        if self.data["MACD"] > self.data["MACDh"]:
-            """this should be goes below 20 and immediatly comes above"""
-            if self.data["STOCHk"] < 20:
-                stage_1 = True
-                while stage_1:
-                    if self.data["STOCHk"] > 20:
-                        stage_1 = False
-                        return "buy", bar
-        elif self.data["MACD"] < self.data["MACDh"]:
-            """this should be goes above 80 and then comes below after immediately"""
-            if self.data["STOCHk"] > 80:
-                stage_1 = True
-                while stage_1:
-                    if self.data["STOCHk"] < 80:
-                        return "sell", bar
 
 
     def Momentum_strategy(self, bar, momentum):
