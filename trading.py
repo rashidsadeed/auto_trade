@@ -14,6 +14,7 @@ client = MongoClient()
 collection = client.OHLC.test
 doc_len = collection.count_documents({})
 
+
 class Actions:
     def __init__(self, client):
         self.client = client
@@ -151,21 +152,22 @@ class Strategist(Actions):
     def MACD_stochastic_strategy(self,symbol, stoch_fast, stock_slow, macd_fast, macd_slow, macd_signal):  
         self.data[["STOCHk", "STOCHd"]] = pt.stoch(self.high, self.low, self.close ,k=stoch_fast, d=stock_slow, talib=True)
         self.data[["MACD", 'MACDh', "MACDs"]] = pt.macd(self.close, fast=macd_fast, slow=macd_slow, signal=macd_signal)
-        if self.data["MACD"] > self.data["MACDh"]:
-            """this should be goes below 20 and immediatly comes above"""
-            if self.data["STOCHk"] < 20:
-                stage_1 = True
-                while stage_1:
-                    if self.data["STOCHk"] > 20:
-                        stage_1 = False
-                        return "buy", symbol
-        elif self.data["MACD"] < self.data["MACDh"]:
-            """this should be goes above 80 and then comes below after immediately"""
-            if self.data["STOCHk"] > 80:
-                stage_1 = True
-                while stage_1:
-                    if self.data["STOCHk"] < 80:
-                        return "sell", symbol
+        for bar in range(SMA2, len(self.data)):
+            if self.data["MACD"].iloc[bar] > self.data["MACDh"].iloc[bar]:
+                """this should be goes below 20 and immediatly comes above"""
+                if self.data["STOCHk"].iloc[bar] < 20:
+                    stage_1 = True
+                    while stage_1:
+                        if self.data["STOCHk"].iloc[bar] > 20:
+                            stage_1 = False
+                            return "buy", symbol
+            elif self.data["MACD"].iloc[bar] < self.data["MACDh"].iloc[bar]:
+                """this should be goes above 80 and then comes below after immediately"""
+                if self.data["STOCHk"].iloc[bar] > 80:
+                    stage_1 = True
+                    while stage_1:
+                        if self.data["STOCHk"].iloc[bar] < 80:
+                            return "sell", symbol
 
 
    """https://www.brokerxplorer.com/article/the-ultimate-3-ema-crossover-strategy-revealed-1856"""
