@@ -137,7 +137,7 @@ class Strategist(Actions):
             elif self.position == 1:
                 if self.data[f"SMA_{SMA1}"] < self.data[f"SMA_{SMA2}"]:
                     self.position = 0
-                    return "buy", symbol
+                    return "sell", symbol
     
     def EMA_strategy(self, symbol, EMA1, EMA2):
         self.data[f"EMA_{EMA1}"] = pt.sma(self.close, length=EMA1)
@@ -169,8 +169,7 @@ class Strategist(Actions):
                         if self.data["STOCHk"].iloc[bar] < 80:
                             return "sell", symbol
 
-
-   """https://www.brokerxplorer.com/article/the-ultimate-3-ema-crossover-strategy-revealed-1856"""
+    ###https://www.brokerxplorer.com/article/the-ultimate-3-ema-crossover-strategy-revealed-1856
     ###this staretegy is highly sketchycreate
     def triple_EMA_crossover(self, EMA1=10, EMA2=30, EMA3=50):
         #first you should create the EMAs in this part
@@ -235,7 +234,15 @@ class Strategist(Actions):
         elif self.active_strat == "Momentum_strategy":
             self.Momentum_strategy(3)
 
-
+def trade_calc(position=False):
+    if not position:
+        #here you insert the algorithm for the trade, and then...i.e if the combination of strategies you choose return "buy"
+        position = True
+        agent.place_buy_order
+    elif position:
+        position = False
+        agent.place_sell_order    
+    
 
 agent = Actions(b_client)
 
