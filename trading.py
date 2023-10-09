@@ -113,17 +113,20 @@ class Actions:
         print("=" * 55)
 
 class Strategist(Actions):
-    def __init__(self,data, agent, active_strat="SMA_strategy"):
+    def __init__(self,symbol, data, agent, active_strat="SMA_strategy", position=0):
         self.active_strat = active_strat
+        self.position = position
         self.data = data
         self.open = data["open"]
         self.high = data["high"]
         self.low = data["low"]
         self.close = data["close"]
         self.agent = agent
+        self.symbol = symbol
 
 
     def SMA_strategy(self, symbol, SMA1, SMA2):
+        """SMA1 should be smaller than SMA2"""
         self.data[f"SMA_{SMA1}"] = pt.sma(self.close, length=SMA1)
         self.data[f"SMA_{SMA2}"] = pt.sma(self.close, length=SMA2)
 
@@ -226,13 +229,23 @@ class Strategist(Actions):
                     print("short position here")
                     return "sell", bar
             
-    def run(self):
-        if self.active_strat == "SMA_strategy":
-            self.SMA_strategy()
-        elif self.active_strat == "EMA_strategy":
-            self.EMA_strategy()
-        elif self.active_strat == "Momentum_strategy":
-            self.Momentum_strategy(3)
+    def run(self, SMA1, SMA2):
+        match self.active_strat:
+            case "SMA_strategy":
+                result, asset = self.SMA_strategy(self.symbol, SMA1, SMA2)
+                if result == "buy":
+                    self.agent.place_buy_order(asset)
+                elif result == "sell":
+                    self.agent.place_sell_order(asset)
+
+        ###### You have to insert all the other strategies you have in here ########
+                
+        #if self.active_strat == "SMA_strategy":
+        #    self.SMA_strategy()
+        #elif self.active_strat == "EMA_strategy":
+        #    self.EMA_strategy()
+        #elif self.active_strat == "Momentum_strategy":
+        #    self.Momentum_strategy(3)
 
 def trade_calc(position=False):
     if not position:
@@ -250,8 +263,8 @@ agent = Actions(b_client)
 while True:
     if collection.count_documents({}) > doc_len:
         new_data, latest_price = agent.get_data(collection)
-        strategist = Strategist(new_data, agent)
-        strategist.Momentum_strategy(3)
+        strategist = Strategist("BTCUSDT",new_data, agent)
+        strategist.run(25, 50)
         doc_len+=1
     
             
