@@ -1,4 +1,7 @@
-class Strategist(Actions):
+import pandas_ta as pt
+import talib as tb
+
+class Strategist():
     def __init__(self,symbol, data, agent, active_strat="SMA_strategy", position=0):
         self.active_strat = active_strat
         self.position = position
@@ -11,7 +14,7 @@ class Strategist(Actions):
         self.symbol = symbol
 
 
-    def SMA_strategy(self, symbol, SMA1, SMA2):
+    def SMA_strategy(self, SMA1, SMA2):
         """SMA1 should be smaller than SMA2"""
         self.data[f"SMA_{SMA1}"] = pt.sma(self.close, length=SMA1)
         self.data[f"SMA_{SMA2}"] = pt.sma(self.close, length=SMA2)
@@ -21,12 +24,12 @@ class Strategist(Actions):
             if self.position == 0:
                 if self.data[f"SMA_{SMA1}"].iloc[bar] > self.data[f"SMA_{SMA2}"].iloc[bar]:
                     self.position = 1
-                    return "buy", symbol
+                    return("buy", self.symbol)
             
             elif self.position == 1:
                 if self.data[f"SMA_{SMA1}"] < self.data[f"SMA_{SMA2}"]:
                     self.position = 0
-                    return "sell", symbol
+                    return("sell", self.symbol)
     
     def EMA_strategy(self, symbol, EMA1, EMA2):
         self.data[f"EMA_{EMA1}"] = pt.sma(self.close, length=EMA1)
@@ -116,13 +119,13 @@ class Strategist(Actions):
                     return "sell", bar
             
     def run(self, SMA1, SMA2):
-        match self.active_strat:
-            case "SMA_strategy":
-                result, asset = self.SMA_strategy(self.symbol, SMA1, SMA2)
-                if result == "buy":
-                    self.agent.place_buy_order(asset)
-                elif result == "sell":
-                    self.agent.place_sell_order(asset)
+        #match self.active_strat:
+        #    case "SMA_strategy":
+        result, asset = self.SMA_strategy(SMA1, SMA2)
+        if result == "buy":
+            self.agent.place_buy_order(asset)
+        elif result == "sell":
+            self.agent.place_sell_order(asset)
 
         ###### You have to insert all the other strategies you have in here ########
                 

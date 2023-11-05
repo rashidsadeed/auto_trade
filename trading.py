@@ -1,12 +1,7 @@
-from . import actions, strategies
+from actions import *
+from strategies import *
 from datetime import date
-from pymongo import MongoClient
-import pymongo
-import pandas as pd
-import pandas_ta as pt
-import talib as tb
 import datetime
-import numpy as np
 from binance.client import Client
 from binance.enums import *
 import os
@@ -23,11 +18,11 @@ client = MongoClient()
 collection = client.OHLC.test
 doc_len = collection.count_documents({})
 
-agent = actions.Actions(b_client)
+agent = Actions(b_client)
 
 while True:
     if collection.count_documents({}) > doc_len:
         new_data, latest_price = agent.get_data(collection)
-        strategist = strategies.Strategist("BTCUSDT",new_data, agent)
-        strategist.run(25, 50)
+        strategist = Strategist("BTCUSDT",new_data, agent)
+        strategist.run(5, 12)
         doc_len+=1            
